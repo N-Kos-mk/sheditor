@@ -4,6 +4,15 @@ import webview
 from api import ShedAPI
 
 
+def _app_dir() -> str:
+    # Nuitka standalone: sys.frozen=True、sys.executable が app.exe のパス。
+    # frontend/dist は exe と同じフォルダに置かれるので dirname(sys.executable) を使う。
+    # 開発時 (python app.py): sys.frozen が存在しないので __file__ を使う。
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 def main():
     dev = "--dev" in sys.argv
     file_path = next(
@@ -16,7 +25,7 @@ def main():
     if dev:
         url = "http://localhost:5173"
     else:
-        url = os.path.join(os.path.dirname(__file__), "frontend", "dist", "index.html")
+        url = os.path.join(_app_dir(), "frontend", "dist", "index.html")
 
     webview.create_window(
         "shed",
