@@ -1,9 +1,12 @@
+import os
+
 from db import ShedDB
 
 
 class ShedAPI:
-    def __init__(self, file_path: str | None = None):
+    def __init__(self, file_path: str | None = None, user_data_dir: str = "."):
         self._db: ShedDB | None = None
+        self._user_data_dir = user_data_dir
         if file_path:
             self._db = ShedDB(file_path)
 
@@ -94,7 +97,15 @@ class ShedAPI:
         return {"ok": True, "path": path}
 
     def apply_rule(self, rule_name: str, sheet_id: str) -> dict:
+        # TODO: rules/ からモジュールを読み込んで apply() を実行する
         return {"ok": True}
 
     def list_rules(self) -> list:
-        return []
+        rules_dir = os.path.join(self._user_data_dir, "rules")
+        if not os.path.isdir(rules_dir):
+            return []
+        result = []
+        for fname in sorted(os.listdir(rules_dir)):
+            if fname.endswith(".py") and not fname.startswith("_"):
+                result.append(fname[:-3])
+        return result

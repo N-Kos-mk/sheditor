@@ -13,6 +13,14 @@ def _app_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
+def _user_data_dir() -> str:
+    # 本番: %APPDATA%\shed\ （インストーラーが config.json・rules\ を配置）
+    # 開発: プロジェクトルート（config.json・rules\ を直接置いて動作確認）
+    if getattr(sys, "frozen", False):
+        return os.path.join(os.environ.get("APPDATA", ""), "shed")
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 def main():
     dev = "--dev" in sys.argv
     file_path = next(
@@ -20,7 +28,7 @@ def main():
         None,
     )
 
-    api = ShedAPI(file_path)
+    api = ShedAPI(file_path, user_data_dir=_user_data_dir())
 
     if dev:
         url = "http://localhost:5173"
