@@ -1,14 +1,26 @@
+from db import ShedDB
+
+
 class ShedAPI:
     def __init__(self, file_path: str | None = None):
-        self.file_path = file_path
+        self._db: ShedDB | None = None
+        if file_path:
+            self._db = ShedDB(file_path)
 
     def get_all_sheets(self) -> list:
-        return []
+        if not self._db:
+            return []
+        return self._db.get_all_sheets()
 
     def get_sheet(self, sheet_id: str) -> dict | None:
-        return None
+        if not self._db:
+            return None
+        return self._db.get_sheet(sheet_id)
 
     def update_cells(self, sheet_id: str, updates: list) -> dict:
+        if not self._db:
+            return {"ok": False, "error": "no file open"}
+        self._db.update_cells(sheet_id, updates)
         return {"ok": True}
 
     def load_csv(self, csv_text: str, sheet_name: str) -> dict:
