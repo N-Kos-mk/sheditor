@@ -45,7 +45,23 @@ class ShedAPI:
         return {"ok": True, "sheet_id": sheet_id, "sheet_name": name}
 
     def save_csv(self, sheet_id: str) -> str:
-        return ""
+        import csv, io
+        from db import AC_COLUMNS
+
+        if not self._db:
+            return ""
+        sheet = self._db.get_sheet(sheet_id)
+        if not sheet:
+            return ""
+
+        exclude = {"internal_row_id"} | set(AC_COLUMNS)
+        columns = [c for c in sheet["columns"] if c not in exclude]
+
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore", lineterminator="\r\n")
+        writer.writeheader()
+        writer.writerows(sheet["rows"])
+        return buf.getvalue()
 
     def apply_rule(self, rule_name: str, sheet_id: str) -> dict:
         return {"ok": True}
