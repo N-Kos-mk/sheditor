@@ -82,6 +82,17 @@ class ShedDB:
             "rows": [dict(r) for r in rows],
         }
 
+    def insert_rows(self, sheet_id: str, columns: list[str], rows: list[dict]) -> None:
+        if not rows:
+            return
+        col_names = ", ".join(f'"{c}"' for c in columns)
+        placeholders = ", ".join("?" for _ in columns)
+        self._conn.executemany(
+            f'INSERT INTO "{sheet_id}" ({col_names}) VALUES ({placeholders})',
+            [[row.get(c, "") for c in columns] for row in rows],
+        )
+        self._conn.commit()
+
     def update_cells(self, sheet_id: str, updates: list[dict]) -> None:
         """updates: [{"internal_row_id": int, "column": str, "value": str}, ...]"""
         for u in updates:
