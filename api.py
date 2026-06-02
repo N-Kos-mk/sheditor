@@ -63,6 +63,36 @@ class ShedAPI:
         writer.writerows(sheet["rows"])
         return buf.getvalue()
 
+    def open_file(self) -> dict:
+        import webview
+        paths = webview.windows[0].create_file_dialog(
+            webview.FileDialog.OPEN,
+            file_types=('Shed Files (*.shed)',),
+        )
+        if not paths:
+            return {"ok": False}
+        path = paths[0] if isinstance(paths, (list, tuple)) else paths
+        if self._db:
+            self._db.close()
+        self._db = ShedDB(path)
+        return {"ok": True, "path": path, "sheets": self._db.get_all_sheets()}
+
+    def new_file(self) -> dict:
+        import webview
+        paths = webview.windows[0].create_file_dialog(
+            webview.FileDialog.SAVE,
+            save_filename='untitled.shed',
+        )
+        if not paths:
+            return {"ok": False}
+        path = paths[0] if isinstance(paths, (list, tuple)) else paths
+        if not path.endswith('.shed'):
+            path += '.shed'
+        if self._db:
+            self._db.close()
+        self._db = ShedDB(path)
+        return {"ok": True, "path": path}
+
     def apply_rule(self, rule_name: str, sheet_id: str) -> dict:
         return {"ok": True}
 
