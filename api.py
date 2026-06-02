@@ -24,7 +24,25 @@ class ShedAPI:
         return {"ok": True}
 
     def load_csv(self, csv_text: str, sheet_name: str) -> dict:
-        return {"ok": True}
+        import csv, io
+
+        if not self._db:
+            return {"ok": False, "error": "ファイルが開かれていません"}
+
+        reader = csv.DictReader(io.StringIO(csv_text))
+        columns = list(reader.fieldnames or [])
+        rows = list(reader)
+
+        # シート名の重複を避ける
+        existing = {s["sheet_name"] for s in self._db.get_all_sheets()}
+        name, n = sheet_name, 1
+        while name in existing:
+            name = f"{sheet_name} ({n})"
+            n += 1
+
+        sheet_id = self._db.create_sheet(name, columns)
+        self._db.insert_rows(sheet_id, columns, rows)
+        return {"ok": True, "sheet_id": sheet_id, "sheet_name": name}
 
     def save_csv(self, sheet_id: str) -> str:
         return ""
