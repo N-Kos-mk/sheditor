@@ -1,3 +1,27 @@
+# local files
+#   Exclude AI-related documents and prompts from tracking, 
+#   as this is a personal project and they are unnecessary for distribution.
+prompt.txt
+.claude
+CLAUDE.md
+claude-res/
+data/
+
+# Node.js
+node_modules/
+
+# Vite
+.vite/
+
+# .shed data files
+*.shed
+
+# Nuitka
+*.dist/
+*.build/
+*.onefile-build/
+app.exe
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
