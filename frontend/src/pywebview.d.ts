@@ -28,6 +28,8 @@ interface ShedAPI {
   save_csv(sheet_id: string): Promise<string>
   open_file(): Promise<{ ok: boolean; path?: string; sheets?: SheetInfo[] }>
   new_file(): Promise<{ ok: boolean; path?: string }>
+  rename_sheet(sheet_id: string, new_name: string): Promise<{ ok: boolean; error?: string }>
+  delete_sheet(sheet_id: string): Promise<{ ok: boolean; error?: string }>
   apply_rule(rule_name: string, sheet_id: string): Promise<{ ok: boolean }>
   list_rules(): Promise<string[]>
 }

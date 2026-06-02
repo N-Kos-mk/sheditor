@@ -3,3 +3,11 @@
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, sans-serif; }
 #root { height: 100vh; }
+
+@keyframes statusShimmer {
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(350%); }
+}
+.status-shimmer {
+  animation: statusShimmer 1.1s linear infinite;
+}

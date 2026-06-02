@@ -96,6 +96,24 @@ class ShedAPI:
         self._db = ShedDB(path)
         return {"ok": True, "path": path}
 
+    def rename_sheet(self, sheet_id: str, new_name: str) -> dict:
+        if not self._db:
+            return {"ok": False, "error": "no file open"}
+        try:
+            self._db.rename_sheet(sheet_id, new_name)
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def delete_sheet(self, sheet_id: str) -> dict:
+        if not self._db:
+            return {"ok": False, "error": "no file open"}
+        try:
+            self._db.delete_sheet(sheet_id)
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def apply_rule(self, rule_name: str, sheet_id: str) -> dict:
         # TODO: rules/ からモジュールを読み込んで apply() を実行する
         return {"ok": True}

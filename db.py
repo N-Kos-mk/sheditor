@@ -106,5 +106,17 @@ class ShedDB:
         )
         self._conn.commit()
 
+    def rename_sheet(self, sheet_id: str, new_name: str) -> None:
+        self._conn.execute(
+            "UPDATE table_info SET sheet_name = ?, updated_at = ? WHERE sheet_id = ?",
+            (new_name, _now(), sheet_id),
+        )
+        self._conn.commit()
+
+    def delete_sheet(self, sheet_id: str) -> None:
+        self._conn.execute(f'DROP TABLE IF EXISTS "{sheet_id}"')
+        self._conn.execute("DELETE FROM table_info WHERE sheet_id = ?", (sheet_id,))
+        self._conn.commit()
+
     def close(self) -> None:
         self._conn.close()
