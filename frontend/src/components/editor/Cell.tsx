@@ -23,7 +23,7 @@ interface Props {
   onCellMouseDown: (key: string, e: React.MouseEvent) => void
   onCellMouseEnter: (key: string) => void
   onCellMouseUp: (key: string) => void
-  onStartEdit?: (init?: string, pos?: number) => void  // 将来の外部起動用（現在未使用）
+  onStartEdit?: (init?: string, pos?: number) => void
   onCancelEdit: () => void
 }
 
@@ -57,42 +57,50 @@ export const Cell = memo(function Cell({
   }, [editValue, value, onUpdate, rowId, columnName, onCancelEdit])
 
   const isAC = columnName.startsWith('AC_')
+
   const getBg = () => {
-    if (isEditing) return isAC ? { backgroundColor: '#eff6ff' } : {}
+    if (isEditing) return isAC ? { backgroundColor: '#f0f9ff' } : { backgroundColor: '#ffffff' }
     if (isCopied) return { backgroundColor: isAC ? '#bfdbfe' : '#eff6ff' }
-    if (!isSelected) return isAC ? { backgroundColor: '#dbeafe' } : {}
-    if (isSelectionStart) return isAC ? { backgroundColor: '#eff6ff' } : {}
-    return { backgroundColor: isAC ? '#b6e9d8' : '#f0fdf4' }
+    if (!isSelected) return isAC ? { backgroundColor: '#f0f9ff' } : {}
+    if (isSelectionStart) return isAC ? { backgroundColor: '#e0f2fe' } : { backgroundColor: '#ffffff' }
+    return { backgroundColor: isAC ? '#dbeafe' : '#eef2ff' }
   }
 
-  const dashH = 'repeating-linear-gradient(90deg, #3b82f6 0, #3b82f6 4px, transparent 4px, transparent 8px)'
-  const dashV = 'repeating-linear-gradient(180deg, #3b82f6 0, #3b82f6 4px, transparent 4px, transparent 8px)'
+  const dashH = 'repeating-linear-gradient(90deg, #6366f1 0, #6366f1 4px, transparent 4px, transparent 8px)'
+  const dashV = 'repeating-linear-gradient(180deg, #6366f1 0, #6366f1 4px, transparent 4px, transparent 8px)'
 
   return (
     <div
       ref={cellRef}
-      className="px-2 py-1 flex items-center cursor-cell select-none"
+      className="px-2 py-0.5 flex items-center cursor-cell select-none"
       style={{
         ...getBg(),
         borderTop: borderStyle.top, borderRight: borderStyle.right,
         borderBottom: borderStyle.bottom, borderLeft: borderStyle.left,
         width, minWidth: width, maxWidth: width, minHeight: height, position: 'relative',
       }}
-      onClick={e => { e.stopPropagation(); if (!isEditing) { const rect = cellRef.current!.getBoundingClientRect(); onCellClick(cellKey, e, e.clientX - rect.left - 8) } }}
+      onClick={e => {
+        e.stopPropagation()
+        if (!isEditing) {
+          const rect = cellRef.current!.getBoundingClientRect()
+          onCellClick(cellKey, e, e.clientX - rect.left - 8)
+        }
+      }}
       onMouseDown={e => onCellMouseDown(cellKey, e)}
       onMouseEnter={() => onCellMouseEnter(cellKey)}
       onMouseUp={() => onCellMouseUp(cellKey)}
     >
       {isEditing ? (
-        <input ref={inputRef} type="text" value={editValue}
+        <input
+          ref={inputRef} type="text" value={editValue}
           onChange={e => onEditValueChange(e.target.value)}
           onBlur={handleBlur} onKeyDown={handleKeyDown}
-          className="w-full bg-transparent outline-none text-sm text-gray-700"
+          className="w-full bg-transparent outline-none text-xs text-zinc-800"
           onClick={e => e.stopPropagation()}
-          style={{ caretColor: '#000' }}
+          style={{ caretColor: '#6366f1' }}
         />
       ) : (
-        <span className="text-sm text-gray-700 truncate w-full">{value}</span>
+        <span className="text-xs text-zinc-800 truncate w-full">{value}</span>
       )}
       {showCopyBorder && (
         <>

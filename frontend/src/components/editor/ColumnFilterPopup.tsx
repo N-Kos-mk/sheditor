@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { ArrowDownAZ, ArrowDownZA, Search, FunnelX, X } from 'lucide-react'
+import { ArrowDownAZ, ArrowDownZA, Search, X } from 'lucide-react'
 import type { ShedRow } from '../../hooks/useShedData'
 
 interface Props {
@@ -49,18 +49,29 @@ export const ColumnFilterPopup = ({
   }, [uniqueValues, currentFilter, displayData, columnName])
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => { if (!dragging.current) return; setPos({ top: e.clientY - dragOffset.current.y, left: e.clientX - dragOffset.current.x }) }
+    const onMove = (e: MouseEvent) => {
+      if (!dragging.current) return
+      setPos({ top: e.clientY - dragOffset.current.y, left: e.clientX - dragOffset.current.x })
+    }
     const onUp = () => { dragging.current = false }
     document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
     return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
   }, [])
 
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (popupRef.current && !popupRef.current.contains(e.target as Node)) onClose() }
-    document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
+    const h = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
   }, [onClose])
 
-  const toggle = (value: string) => setSelectedValues(prev => { const n = new Set(prev); if (n.has(value)) n.delete(value); else n.add(value); return n })
+  const toggle = (value: string) => setSelectedValues(prev => {
+    const n = new Set(prev)
+    if (n.has(value)) n.delete(value); else n.add(value)
+    return n
+  })
+
   const toggleAll = () => {
     const all = filteredValues.map(i => i.value)
     const allSel = all.every(v => selectedValues.has(v))
@@ -72,57 +83,127 @@ export const ColumnFilterPopup = ({
     const newSel = isInitialState ? new Set(visibleSel) : new Set([...selectedValues, ...visibleSel])
     setSelectedValues(newSel); setIsInitialState(false); setSearchText('')
   }
+
   const handleOk = () => {
     const visSel = filteredValues.filter(i => selectedValues.has(i.value)).map(i => i.value)
     const all = searchText ? visSel : Array.from(selectedValues)
     if (all.length === uniqueValues.length) onClearFilter(); else onApplyFilter(all)
     onClose()
   }
-  const handleClear = () => { setSearchText(''); setSelectedValues(new Set(uniqueValues.map(i => i.value))); setIsInitialState(true); onClearFilter(); onClose() }
+
+  const handleClear = () => {
+    setSearchText(''); setSelectedValues(new Set(uniqueValues.map(i => i.value)))
+    setIsInitialState(true); onClearFilter(); onClose()
+  }
 
   return (
-    <div ref={popupRef} className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 filter-popup-container"
-      style={{ top: pos.top, left: pos.left, width: 280, maxHeight: 500, display: 'flex', flexDirection: 'column' }}>
-      <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-200 bg-slate-200 rounded-t-lg cursor-move select-none"
-        onMouseDown={e => { if (e.button !== 0) return; dragging.current = true; dragOffset.current = { x: e.clientX - pos.left, y: e.clientY - pos.top }; e.preventDefault() }}>
-        <span className="text-sm font-semibold text-slate-700">{columnName}</span>
-        <button onClick={onClose} onMouseDown={e => e.stopPropagation()} className="p-1 hover:bg-slate-300 rounded"><X size={16} className="text-slate-600" /></button>
+    <div
+      ref={popupRef}
+      className="fixed bg-white border border-zinc-200 rounded-lg shadow-xl z-50 filter-popup-container overflow-hidden"
+      style={{ top: pos.top, left: pos.left, width: 272, maxHeight: 480, display: 'flex', flexDirection: 'column' }}
+    >
+      {/* ドラッグヘッダー */}
+      <div
+        className="flex items-center justify-between px-3 py-2 bg-zinc-800 cursor-move select-none shrink-0"
+        onMouseDown={e => {
+          if (e.button !== 0) return
+          dragging.current = true
+          dragOffset.current = { x: e.clientX - pos.left, y: e.clientY - pos.top }
+          e.preventDefault()
+        }}
+      >
+        <span className="text-xs font-semibold text-zinc-100 truncate">{columnName}</span>
+        <button
+          onClick={onClose}
+          onMouseDown={e => e.stopPropagation()}
+          className="p-0.5 rounded hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-colors"
+        >
+          <X size={14} />
+        </button>
       </div>
-      <div className="flex gap-2 p-2 border-b border-gray-200">
-        <button onClick={() => { onSort('asc'); onClose() }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded text-sm"><ArrowDownAZ size={16} /><span>昇順</span></button>
-        <button onClick={() => { onSort('desc'); onClose() }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded text-sm"><ArrowDownZA size={16} /><span>降順</span></button>
+
+      {/* ソートボタン */}
+      <div className="flex gap-1.5 p-2 border-b border-zinc-100 shrink-0">
+        <button
+          onClick={() => { onSort('asc'); onClose() }}
+          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded text-xs text-zinc-600 transition-colors"
+        >
+          <ArrowDownAZ size={14} /><span>昇順</span>
+        </button>
+        <button
+          onClick={() => { onSort('desc'); onClose() }}
+          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded text-xs text-zinc-600 transition-colors"
+        >
+          <ArrowDownZA size={14} /><span>降順</span>
+        </button>
       </div>
+
+      {/* フィルタ本体 */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-2 border-b border-gray-200">
-          <span className="text-sm font-medium text-gray-700">値フィルタ</span>
-          <button onClick={handleClear} className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-sm text-gray-600"><FunnelX size={14} /><span>クリア</span></button>
-        </div>
-        <div className="p-2 border-b border-gray-200">
+        {/* 検索 */}
+        <div className="p-2 border-b border-zinc-100 shrink-0">
           <div className="relative">
-            <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)} placeholder="検索..."
-              className="w-full px-3 py-2 pr-8 border border-gray-300 rounded text-sm outline-none focus:border-blue-500" />
-            <Search size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text" value={searchText} onChange={e => setSearchText(e.target.value)}
+              placeholder="検索..."
+              className="w-full pl-3 pr-8 py-1.5 border border-zinc-200 rounded text-xs outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100"
+            />
+            <Search size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-2" style={{ maxHeight: 250, minHeight: 250 }}>
-          <label className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-            <input type="checkbox" checked={filteredValues.length > 0 && filteredValues.every(i => selectedValues.has(i.value))} onChange={toggleAll} className="w-4 h-4" />
-            <span className="text-sm font-medium text-gray-700">(すべて選択)</span>
+
+        {/* 値リスト */}
+        <div className="flex-1 overflow-y-auto" style={{ maxHeight: 220, minHeight: 120 }}>
+          <label className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-50 cursor-pointer border-b border-zinc-100">
+            <input
+              type="checkbox"
+              checked={filteredValues.length > 0 && filteredValues.every(i => selectedValues.has(i.value))}
+              onChange={toggleAll}
+              className="w-3.5 h-3.5 accent-indigo-500"
+            />
+            <span className="text-xs font-medium text-zinc-600">(すべて選択)</span>
           </label>
           {filteredValues.map(item => (
-            <label key={item.value} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-              <input type="checkbox" checked={selectedValues.has(item.value)} onChange={() => toggle(item.value)} className="w-4 h-4" />
-              <span className="text-sm text-gray-700 flex-1 truncate">{item.value || '(空白)'}</span>
-              {item.count > 1 && <span className="text-xs text-gray-400">({item.count})</span>}
+            <label key={item.value} className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-50 cursor-pointer">
+              <input
+                type="checkbox" checked={selectedValues.has(item.value)}
+                onChange={() => toggle(item.value)}
+                className="w-3.5 h-3.5 accent-indigo-500 shrink-0"
+              />
+              <span className="text-xs text-zinc-700 flex-1 truncate">{item.value || <span className="text-zinc-400 italic">(空白)</span>}</span>
+              {item.count > 1 && <span className="text-xs text-zinc-400 shrink-0">({item.count})</span>}
             </label>
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-between p-2 border-t border-gray-200">
-        <button onClick={handleAddApply} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-medium">追加適用</button>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-sm">キャンセル</button>
-          <button onClick={handleOk} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm">OK</button>
+
+      {/* フッター */}
+      <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-100 bg-zinc-50 shrink-0">
+        <button
+          onClick={handleClear}
+          className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200 rounded transition-colors"
+        >
+          クリア
+        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={handleAddApply}
+            className="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded transition-colors"
+          >
+            追加
+          </button>
+          <button
+            onClick={onClose}
+            className="px-2.5 py-1 text-xs text-zinc-600 hover:bg-zinc-200 rounded transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={handleOk}
+            className="px-2.5 py-1 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-colors"
+          >
+            OK
+          </button>
         </div>
       </div>
     </div>

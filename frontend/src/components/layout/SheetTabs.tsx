@@ -18,7 +18,10 @@ export const SheetTabs = ({ sheets, activeSheetId, onSelectSheet, onAddSheet, on
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (editingId && inputRef.current) { inputRef.current.focus({ preventScroll: true }); inputRef.current.select() }
+    if (editingId && inputRef.current) {
+      inputRef.current.focus({ preventScroll: true })
+      inputRef.current.select()
+    }
   }, [editingId])
 
   const commitRename = useCallback(() => {
@@ -40,28 +43,36 @@ export const SheetTabs = ({ sheets, activeSheetId, onSelectSheet, onAddSheet, on
   }, [onAddSheet])
 
   return (
-    <div className="flex items-end bg-slate-300 border-b border-slate-400 px-2 pt-1 gap-px select-none overflow-x-auto shrink-0" style={{ minHeight: 34 }}>
+    <div className="bg-white border-b border-zinc-200 flex items-stretch px-2 gap-0 shrink-0 overflow-x-auto select-none" style={{ minHeight: 35 }}>
       {sheets.map(sheet => {
         const isActive = sheet.id === activeSheetId
         return (
           <div
             key={sheet.id}
             onClick={() => !editingId && onSelectSheet(sheet.id)}
-            onDoubleClick={e => { if (!onRenameSheet) return; e.preventDefault(); setEditingId(sheet.id); setEditName(sheet.name) }}
+            onDoubleClick={e => {
+              if (!onRenameSheet) return
+              e.preventDefault()
+              setEditingId(sheet.id); setEditName(sheet.name)
+            }}
             onMouseDown={e => { if (editingId === sheet.id && e.target !== inputRef.current) e.preventDefault() }}
             className={[
-              'group relative flex items-center gap-1 px-3 text-sm cursor-pointer border border-b-0 rounded-t whitespace-nowrap transition-colors',
-              isActive ? 'bg-white text-gray-800 border-slate-400 z-10 shadow-sm' : 'bg-slate-200 text-slate-600 border-slate-300 hover:bg-white/70 hover:text-gray-700',
+              'group flex items-center gap-1.5 px-3 cursor-pointer text-xs whitespace-nowrap transition-colors border-b-2',
+              isActive
+                ? 'border-indigo-500 text-indigo-600 font-medium'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:border-zinc-300',
             ].join(' ')}
-            style={{ paddingTop: 5, paddingBottom: isActive ? 6 : 5, marginBottom: isActive ? -1 : 0 }}
           >
             {editingId === sheet.id ? (
               <input
                 ref={inputRef} value={editName}
                 onChange={e => setEditName(e.target.value)}
                 onBlur={commitRename}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitRename() } if (e.key === 'Escape') setEditingId(null) }}
-                className="w-28 text-sm bg-transparent outline-none border-b border-blue-500"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitRename() }
+                  if (e.key === 'Escape') setEditingId(null)
+                }}
+                className="w-24 text-xs bg-transparent outline-none border-b border-indigo-400"
                 onClick={e => e.stopPropagation()}
               />
             ) : (
@@ -69,11 +80,14 @@ export const SheetTabs = ({ sheets, activeSheetId, onSelectSheet, onAddSheet, on
             )}
             {sheets.length > 1 && onDeleteSheet && (
               <button
-                onClick={e => { e.stopPropagation(); if (window.confirm(`「${sheet.name}」を削除しますか？`)) onDeleteSheet(sheet.id) }}
-                className="opacity-0 group-hover:opacity-60 hover:!opacity-100 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-opacity"
+                onClick={e => {
+                  e.stopPropagation()
+                  if (window.confirm(`「${sheet.name}」を削除しますか？`)) onDeleteSheet(sheet.id)
+                }}
+                className="opacity-0 group-hover:opacity-50 hover:!opacity-100 rounded hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-opacity"
                 title="シートを削除"
               >
-                <X size={12} />
+                <X size={11} />
               </button>
             )}
           </div>
@@ -83,10 +97,10 @@ export const SheetTabs = ({ sheets, activeSheetId, onSelectSheet, onAddSheet, on
         <>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center w-7 h-7 mb-px ml-1 text-slate-500 hover:text-gray-700 hover:bg-slate-200 rounded transition-colors shrink-0"
+            className="ml-1 my-auto flex items-center justify-center w-6 h-6 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded transition-colors shrink-0"
             title="CSVファイルからシートを追加"
           >
-            <Plus size={15} />
+            <Plus size={13} />
           </button>
           <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
         </>
