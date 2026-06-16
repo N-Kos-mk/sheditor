@@ -13,6 +13,10 @@ function basename(path: string): string {
   return path.split(/[\\/]/).at(-1) ?? path
 }
 
+function isUnsavedPath(path: string): boolean {
+  return path.startsWith('__unsaved__')
+}
+
 export const FileTabBar = ({ openFiles, onSwitch, onClose }: Props) => {
   if (openFiles.length === 0) return null
   return (
@@ -29,7 +33,10 @@ export const FileTabBar = ({ openFiles, onSwitch, onClose }: Props) => {
               : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 cursor-pointer',
           ].join(' ')}
         >
-          <span className="truncate">{basename(f.path)}</span>
+          {isUnsavedPath(f.path)
+            ? <span className="truncate italic text-amber-600">(未保存)</span>
+            : <span className="truncate">{basename(f.path)}</span>
+          }
           <button
             title="閉じる"
             onClick={e => { e.stopPropagation(); onClose(f.path) }}

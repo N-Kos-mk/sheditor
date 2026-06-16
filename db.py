@@ -22,9 +22,18 @@ def _new_sheet_id() -> str:
 class ShedDB:
     def __init__(self, path: str):
         self.path = path
-        self._conn = sqlite3.connect(path, check_same_thread=False)
+        # __unsaved__ 系センチネルはインメモリDBとして扱う
+        actual = ':memory:' if path.startswith('__unsaved__') else path
+        self._conn = sqlite3.connect(actual, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._init_schema()
+
+    def save_to(self, dest_path: str) -> None:
+        """インメモリ（または現在の）DBをファイルに書き出す"""
+        dest = sqlite3.connect(dest_path)
+        self._conn.backup(dest)
+        dest.close()
+        self.path = dest_path
 
     def _init_schema(self) -> None:
         self._conn.execute("""

@@ -41,6 +41,12 @@ class ShedAPI:
         return {"ok": True, "path": path, "sheets": self._dbs[path].get_all_sheets()}
 
     def new_file(self) -> dict:
+        sentinel = f'__unsaved__{id(self)}_{len(self._dbs)}'
+        self._dbs[sentinel] = ShedDB(sentinel)
+        self._active_path = sentinel
+        return {"ok": True, "path": sentinel}
+
+    def save_as(self) -> dict:
         import webview
         paths = webview.windows[0].create_file_dialog(
             webview.FileDialog.SAVE,
@@ -51,7 +57,14 @@ class ShedAPI:
         path = paths[0] if isinstance(paths, (list, tuple)) else paths
         if not path.endswith('.shed'):
             path += '.shed'
-        self._dbs[path] = ShedDB(path)
+        db = self._db
+        if not db:
+            return {"ok": False, "error": "no file open"}
+        old_key = self._active_path
+        db.save_to(path)
+        self._dbs[path] = db
+        if old_key and old_key != path:
+            del self._dbs[old_key]
         self._active_path = path
         return {"ok": True, "path": path}
 

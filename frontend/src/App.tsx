@@ -31,6 +31,7 @@ function App() {
   const [isDownloading, setIsDownloading] = useState(false)
 
   const activeFilePath = openFiles.find(f => f.isActive)?.path ?? null
+  const isUnsaved = activeFilePath?.startsWith('__unsaved__') ?? false
 
   // pywebview ブリッジ接続待ち
   useEffect(() => {
@@ -44,6 +45,16 @@ function App() {
   }, [])
 
   const { sheets, activeSheetId, setActiveSheetId, data, headers, loading, loadAllSheets, updateCell, updateMultipleCells, deleteCells, addSheet, renameSheet, deleteSheet } = useShedData(bridgeReady)
+
+  // 起動時にバックエンドの開いているファイル一覧と同期（パス付き起動対応）
+  useEffect(() => {
+    if (!bridgeReady || !window.pywebview) return
+    window.pywebview.api.get_open_files().then(files => {
+      if (files.length > 0) {
+        setOpenFiles(files.map(f => ({ path: f.path, isActive: f.is_active })))
+      }
+    })
+  }, [bridgeReady])
 
   const activeSheet = sheets.find(s => s.id === activeSheetId) ?? null
 
@@ -150,9 +161,20 @@ function App() {
     else selectCell(newKey, false, false)
   }, [selectionStart, focusCell, displayData, visibleHeaders, selectCell, selectRange, allCellKeys])
 
+  const handleSaveAs = useCallback(async () => {
+    if (!activeFilePath) return
+    const res = await window.pywebview!.api.save_as()
+    if (!res.ok || !res.path) return
+    const newPath = res.path
+    setOpenFiles(prev => prev.map(f =>
+      f.path === activeFilePath ? { ...f, path: newPath } : f
+    ))
+  }, [activeFilePath])
+
   useEffect(() => {
     const handler = async (e: KeyboardEvent) => {
       if (isEditMode) return
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (isUnsaved) handleSaveAs(); return }
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); await copyToClipboard(selectedCells, displayData, headers, visibleColumns, selectionStart) }
       else if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); await pasteFromClipboard(selectedCells, displayData, headers, visibleColumns, selectionStart, updateMultipleCells, selectCellSet) }
       else if (e.key === 'Delete' && selectedCells.size > 0) { e.preventDefault(); deleteCells(Array.from(selectedCells).filter(k => visibleColumns[k.split('-')[1]])) }
@@ -167,7 +189,7 @@ function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [selectedCells, displayData, headers, visibleColumns, selectionStart, isEditMode, copyToClipboard, pasteFromClipboard, deleteCells, clearSelection, clearCopyMode, updateMultipleCells, selectCellSet, handleStartEdit, moveSelection])
+  }, [selectedCells, displayData, headers, visibleColumns, selectionStart, isEditMode, isUnsaved, copyToClipboard, pasteFromClipboard, deleteCells, clearSelection, clearCopyMode, updateMultipleCells, selectCellSet, handleStartEdit, moveSelection, handleSaveAs])
 
   const handleCellClick = useCallback((cellKey: string, e: React.MouseEvent, clickX: number) => {
     if (e.shiftKey && selectionStart) { e.preventDefault(); selectRange(selectionStart, cellKey, allCellKeys); return }
@@ -310,6 +332,7 @@ function App() {
         onPaste={() => pasteFromClipboard(selectedCells, displayData, headers, visibleColumns, selectionStart, updateMultipleCells, selectCellSet)}
         onDelete={() => deleteCells(Array.from(selectedCells).filter(k => visibleColumns[k.split('-')[1]]))}
         onDownload={handleDownload} isDownloading={isDownloading}
+        isUnsaved={isUnsaved} onSaveAs={handleSaveAs}
         steps={DEFAULT_CONFIG.steps} workingIndex={workingIndex} specialSelected={specialSelected}
         onApplyWorking={applyWorking} onApplySpecial={applySpecial} stepsReady={stepLoaded}
       />

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react'
 import {
   Copy, ClipboardPaste, Trash2,
   ChevronLeft, ChevronRight, ChevronDown,
-  Download, Loader2, FolderOpen, FilePlus,
+  Download, Loader2, FolderOpen, FilePlus, Save,
 } from 'lucide-react'
 
 interface Step { label: string; columns: string[] }
@@ -82,6 +82,8 @@ interface Props {
   onDelete: () => void
   onDownload: () => void
   isDownloading?: boolean
+  isUnsaved?: boolean
+  onSaveAs?: () => void
   steps?: Step[]
   workingIndex?: number
   specialSelected?: string | null
@@ -93,6 +95,7 @@ interface Props {
 export const Toolbar = ({
   hasFile, onOpenFile, onNewFile,
   onCopy, onPaste, onDelete, onDownload, isDownloading = false,
+  isUnsaved = false, onSaveAs = () => {},
   steps = [], workingIndex = 0, specialSelected = null,
   onApplyWorking = () => {}, onApplySpecial = () => {}, stepsReady = true,
 }: Props) => {
@@ -102,6 +105,9 @@ export const Toolbar = ({
     <div className="h-9 bg-white border-b border-zinc-200 px-2 flex items-center gap-0.5 shrink-0">
       <Btn title="ファイルを開く" onClick={onOpenFile}><FolderOpen size={15} className="text-indigo-500" /></Btn>
       <Btn title="新規作成" onClick={onNewFile}><FilePlus size={15} className="text-violet-500" /></Btn>
+      <Btn title="名前を付けて保存 (Ctrl+S)" onClick={onSaveAs} disabled={!isUnsaved}>
+        <Save size={15} className={isUnsaved ? 'text-amber-500' : 'text-zinc-400'} />
+      </Btn>
       <Btn title="CSVダウンロード" onClick={onDownload} disabled={!hasFile || isDownloading}>
         {isDownloading
           ? <Loader2 size={15} className="text-emerald-500 animate-spin" />

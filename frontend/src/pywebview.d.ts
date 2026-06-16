@@ -33,6 +33,7 @@ interface ShedAPI {
   save_csv(sheet_id: string): Promise<string>
   open_file(): Promise<{ ok: boolean; path?: string; sheets?: SheetInfo[] }>
   new_file(): Promise<{ ok: boolean; path?: string }>
+  save_as(): Promise<{ ok: boolean; path?: string; error?: string }>
   switch_file(path: string): Promise<{ ok: boolean; path?: string; error?: string }>
   close_file(path: string): Promise<{ ok: boolean; new_active?: string | null; error?: string }>
   get_open_files(): Promise<OpenFileInfo[]>
