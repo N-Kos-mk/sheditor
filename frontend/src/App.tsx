@@ -9,6 +9,7 @@ import { useRowHeight } from './hooks/useRowHeight'
 import { useColumnFilter } from './hooks/useColumnFilter'
 import { useStepState } from './hooks/useStepState'
 import { MainHeader } from './components/layout/MainHeader'
+import { FileTabBar } from './components/layout/FileTabBar'
 import { Toolbar } from './components/layout/Toolbar'
 import { FormulaBar } from './components/layout/FormulaBar'
 import { Sidebar } from './components/layout/Sidebar'
@@ -25,9 +26,11 @@ const DEFAULT_CONFIG = { keyField: '', keyFieldCopyLabel: 'コピー', steps: []
 
 function App() {
   const [bridgeReady, setBridgeReady] = useState(false)
-  const [filePath, setFilePath] = useState<string | null>(null)
+  const [openFiles, setOpenFiles] = useState<{ path: string; isActive: boolean }[]>([])
   const [status, setStatus] = useState('接続中...')
   const [isDownloading, setIsDownloading] = useState(false)
+
+  const activeFilePath = openFiles.find(f => f.isActive)?.path ?? null
 
   // pywebview ブリッジ接続待ち
   useEffect(() => {
@@ -208,19 +211,57 @@ function App() {
   }, [setIsSelecting])
 
   // ファイル操作
+  const resetUIState = useCallback(() => {
+    clearSelection(); clearCopyMode(); setIsSelecting(false)
+    setEditingCell(null); setEditValue('')
+    clearAllFilters({ saveToServer: false })
+  }, [clearSelection, clearCopyMode, setIsSelecting, clearAllFilters])
+
   const handleOpenFile = useCallback(async () => {
     const res = await window.pywebview!.api.open_file()
     if (!res.ok) return
-    setFilePath(res.path ?? null)
+    const path = res.path!
+    resetUIState()
+    setOpenFiles(prev => {
+      const exists = prev.some(f => f.path === path)
+      if (exists) return prev.map(f => ({ ...f, isActive: f.path === path }))
+      return [...prev.map(f => ({ ...f, isActive: false })), { path, isActive: true }]
+    })
     await loadAllSheets()
-  }, [loadAllSheets])
+  }, [loadAllSheets, resetUIState])
 
   const handleNewFile = useCallback(async () => {
     const res = await window.pywebview!.api.new_file()
     if (!res.ok) return
-    setFilePath(res.path ?? null)
+    const path = res.path!
+    resetUIState()
+    setOpenFiles(prev => [...prev.map(f => ({ ...f, isActive: false })), { path, isActive: true }])
     await loadAllSheets()
-  }, [loadAllSheets])
+  }, [loadAllSheets, resetUIState])
+
+  const handleSwitchFile = useCallback(async (path: string) => {
+    const res = await window.pywebview!.api.switch_file(path)
+    if (!res.ok) return
+    resetUIState()
+    setOpenFiles(prev => prev.map(f => ({ ...f, isActive: f.path === path })))
+    await loadAllSheets()
+  }, [loadAllSheets, resetUIState])
+
+  const handleCloseFile = useCallback(async (path: string) => {
+    const res = await window.pywebview!.api.close_file(path)
+    if (!res.ok) return
+    resetUIState()
+    setOpenFiles(prev => {
+      const remaining = prev.filter(f => f.path !== path)
+      if (remaining.length === 0) return []
+      const wasActive = prev.find(f => f.path === path)?.isActive
+      if (wasActive && res.new_active) {
+        return remaining.map(f => ({ ...f, isActive: f.path === res.new_active }))
+      }
+      return remaining
+    })
+    await loadAllSheets()
+  }, [loadAllSheets, resetUIState])
 
   const handleDownload = useCallback(async () => {
     if (!activeSheetId) return
@@ -256,10 +297,14 @@ function App() {
         sidebarVisible={sidebarVisible} subPanelVisible={subPanelVisible}
         onSidebarToggle={() => setSidebarVisible(!sidebarVisible)}
         onSubPanelToggle={() => setSubPanelVisible(!subPanelVisible)}
-        filePath={filePath}
+      />
+      <FileTabBar
+        openFiles={openFiles}
+        onSwitch={handleSwitchFile}
+        onClose={handleCloseFile}
       />
       <Toolbar
-        hasFile={sheets.length > 0}
+        hasFile={activeFilePath !== null}
         onOpenFile={handleOpenFile} onNewFile={handleNewFile}
         onCopy={() => copyToClipboard(selectedCells, displayData, headers, visibleColumns, selectionStart)}
         onPaste={() => pasteFromClipboard(selectedCells, displayData, headers, visibleColumns, selectionStart, updateMultipleCells, selectCellSet)}
@@ -282,7 +327,7 @@ function App() {
         {!contentReady ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-gray-400 text-sm">
-              {status || (sheets.length === 0 ? 'ファイルを開いてください' : 'データを読み込み中...')}
+              {status || (activeFilePath === null ? 'ファイルを開いてください' : 'データを読み込み中...')}
             </div>
           </div>
         ) : (

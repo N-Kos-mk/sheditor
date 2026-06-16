@@ -5,10 +5,72 @@ from db import ShedDB
 
 class ShedAPI:
     def __init__(self, file_path: str | None = None, user_data_dir: str = "."):
-        self._db: ShedDB | None = None
+        self._dbs: dict[str, ShedDB] = {}
+        self._active_path: str | None = None
         self._user_data_dir = user_data_dir
         if file_path:
-            self._db = ShedDB(file_path)
+            self._dbs[file_path] = ShedDB(file_path)
+            self._active_path = file_path
+
+    @property
+    def _db(self) -> ShedDB | None:
+        if self._active_path is None:
+            return None
+        return self._dbs.get(self._active_path)
+
+    # ── ファイル管理 ──────────────────────────────────────────────
+
+    def get_open_files(self) -> list:
+        return [
+            {"path": path, "is_active": path == self._active_path}
+            for path in self._dbs
+        ]
+
+    def open_file(self) -> dict:
+        import webview
+        paths = webview.windows[0].create_file_dialog(
+            webview.FileDialog.OPEN,
+            file_types=('Shed Files (*.shed)',),
+        )
+        if not paths:
+            return {"ok": False}
+        path = paths[0] if isinstance(paths, (list, tuple)) else paths
+        if path not in self._dbs:
+            self._dbs[path] = ShedDB(path)
+        self._active_path = path
+        return {"ok": True, "path": path, "sheets": self._dbs[path].get_all_sheets()}
+
+    def new_file(self) -> dict:
+        import webview
+        paths = webview.windows[0].create_file_dialog(
+            webview.FileDialog.SAVE,
+            save_filename='untitled.shed',
+        )
+        if not paths:
+            return {"ok": False}
+        path = paths[0] if isinstance(paths, (list, tuple)) else paths
+        if not path.endswith('.shed'):
+            path += '.shed'
+        self._dbs[path] = ShedDB(path)
+        self._active_path = path
+        return {"ok": True, "path": path}
+
+    def switch_file(self, path: str) -> dict:
+        if path not in self._dbs:
+            return {"ok": False, "error": "file not open"}
+        self._active_path = path
+        return {"ok": True, "path": path}
+
+    def close_file(self, path: str) -> dict:
+        if path not in self._dbs:
+            return {"ok": False, "error": "file not open"}
+        self._dbs[path].close()
+        del self._dbs[path]
+        if self._active_path == path:
+            self._active_path = next(iter(self._dbs), None)
+        return {"ok": True, "new_active": self._active_path}
+
+    # ── シートデータ ──────────────────────────────────────────────
 
     def get_all_sheets(self) -> list:
         if not self._db:
@@ -36,7 +98,6 @@ class ShedAPI:
         columns = list(reader.fieldnames or [])
         rows = list(reader)
 
-        # シート名の重複を避ける
         existing = {s["sheet_name"] for s in self._db.get_all_sheets()}
         name, n = sheet_name, 1
         while name in existing:
@@ -66,36 +127,6 @@ class ShedAPI:
         writer.writerows(sheet["rows"])
         return buf.getvalue()
 
-    def open_file(self) -> dict:
-        import webview
-        paths = webview.windows[0].create_file_dialog(
-            webview.FileDialog.OPEN,
-            file_types=('Shed Files (*.shed)',),
-        )
-        if not paths:
-            return {"ok": False}
-        path = paths[0] if isinstance(paths, (list, tuple)) else paths
-        if self._db:
-            self._db.close()
-        self._db = ShedDB(path)
-        return {"ok": True, "path": path, "sheets": self._db.get_all_sheets()}
-
-    def new_file(self) -> dict:
-        import webview
-        paths = webview.windows[0].create_file_dialog(
-            webview.FileDialog.SAVE,
-            save_filename='untitled.shed',
-        )
-        if not paths:
-            return {"ok": False}
-        path = paths[0] if isinstance(paths, (list, tuple)) else paths
-        if not path.endswith('.shed'):
-            path += '.shed'
-        if self._db:
-            self._db.close()
-        self._db = ShedDB(path)
-        return {"ok": True, "path": path}
-
     def rename_sheet(self, sheet_id: str, new_name: str) -> dict:
         if not self._db:
             return {"ok": False, "error": "no file open"}
@@ -113,6 +144,8 @@ class ShedAPI:
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
+    # ── プラグイン ────────────────────────────────────────────────
 
     def apply_rule(self, rule_name: str, sheet_id: str) -> dict:
         # TODO: rules/ からモジュールを読み込んで apply() を実行する

@@ -5,12 +5,10 @@ interface Props {
   subPanelVisible: boolean
   onSidebarToggle: () => void
   onSubPanelToggle: () => void
-  filePath: string | null
 }
 
-export const MainHeader = ({ sidebarVisible, subPanelVisible, onSidebarToggle, onSubPanelToggle, filePath }: Props) => (
-  <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
-    <span className="text-xs text-gray-400 truncate max-w-md">{filePath ?? '—'}</span>
+export const MainHeader = ({ sidebarVisible, subPanelVisible, onSidebarToggle, onSubPanelToggle }: Props) => (
+  <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-end">
     <div className="flex gap-2">
       <button
         onClick={onSidebarToggle}
