@@ -20,6 +20,11 @@ interface CellUpdate {
   value: string
 }
 
+interface OpenFileInfo {
+  path: string
+  is_active: boolean
+}
+
 interface ShedAPI {
   get_all_sheets(): Promise<SheetInfo[]>
   get_sheet(sheet_id: string): Promise<SheetData | null>
@@ -28,6 +33,12 @@ interface ShedAPI {
   save_csv(sheet_id: string): Promise<string>
   open_file(): Promise<{ ok: boolean; path?: string; sheets?: SheetInfo[] }>
   new_file(): Promise<{ ok: boolean; path?: string }>
+  save_as(): Promise<{ ok: boolean; path?: string; error?: string }>
+  switch_file(path: string): Promise<{ ok: boolean; path?: string; error?: string }>
+  close_file(path: string): Promise<{ ok: boolean; new_active?: string | null; error?: string }>
+  get_open_files(): Promise<OpenFileInfo[]>
+  rename_sheet(sheet_id: string, new_name: string): Promise<{ ok: boolean; error?: string }>
+  delete_sheet(sheet_id: string): Promise<{ ok: boolean; error?: string }>
   apply_rule(rule_name: string, sheet_id: string): Promise<{ ok: boolean }>
   list_rules(): Promise<string[]>
 }
