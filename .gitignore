@@ -21,6 +21,7 @@ node_modules/
 *.build/
 *.onefile-build/
 app.exe
+nuitka-crash-report.xml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
